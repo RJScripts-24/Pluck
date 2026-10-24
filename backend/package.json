@@ -1,0 +1,11 @@
+{
+  "name": "pluck-backend",
+  "version": "1.0.0",
+  "description": "Pluck Spring Boot + MongoDB Backend",
+  "scripts": {
+    "dev": "mvnw.cmd spring-boot:run",
+    "start": "mvnw.cmd spring-boot:run",
+    "build": "mvnw.cmd clean package",
+    "compile": "mvnw.cmd compile"
+  }
+}

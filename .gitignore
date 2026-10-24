@@ -1,0 +1,9 @@
+# Ignore everything in the root directory
+/*
+
+# Whitelist .gitignore itself
+!.gitignore
+
+# Whitelist frontend and backend directories
+!/frontend/
+!/backend/

@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vault Dashboard — Pluck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Press+Start+2P&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="app-style.css" />
+  <link rel="stylesheet" href="magic-bento.css" />
+  <link rel="stylesheet" href="border-glow.css" />
+</head>
+
+<body>
+  <!-- Full-page Matrix Rain Background -->
+  <canvas id="matrix-canvas" aria-hidden="true"></canvas>
+
+  <div class="app-shell">
+
+    <!-- ░░░ SIDEBAR ░░░ -->
+    <aside class="app-sidebar">
+      <!-- App Brand & Logo -->
+      <div class="app-sidebar-header">
+        <a href="index.html" class="nav-logo" title="Back to Homepage">
+          <img src="squid.png" alt="Pluck" class="nav-logo-squid" width="26" height="26" />
+          <span class="logo-wordmark" style="font-size: 13px;">Pluck</span>
+        </a>
+        <a href="settings.html" title="Settings" style="color: var(--muted);"><svg width="16" height="16"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
+          </svg></a>
+      </div>
+
+      <!-- Workspace Switcher with Interactive Dropdown -->
+      <div style="padding: 12px 14px 4px; position: relative;">
+        <div class="ws-switcher pixel-border-box" id="ws-switcher-btn" onclick="toggleWorkspaceDropdown()"
+          style="cursor: pointer;">
+          <div class="ws-info">
+            <div class="ws-icon" id="current-ws-icon">P</div>
+            <div>
+              <div class="ws-name" id="current-ws-name">Personal Vault</div>
+              <div style="font-size: 10px; color: var(--muted);" id="current-ws-sub">0 snippets · 0 leaks</div>
+            </div>
+          </div>
+          <span style="font-size: 10px; color: var(--purple-light);">▾</span>
+        </div>
+
+        <!-- Dropdown Menu -->
+        <div id="ws-dropdown" class="pixel-border-box"
+          style="display: none; position: absolute; top: calc(100% + 4px); left: 14px; right: 14px; background: #141416; border: 1px solid rgba(139, 92, 246, 0.3); z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,0.85); padding: 6px;">
+          <div style="padding: 6px 10px; font-size: 10px; color: var(--muted); text-transform: uppercase;">Switch
+            Workspace</div>
+          <div id="ws-list-container">
+            <!-- Dynamic Workspaces -->
+          </div>
+          <div onclick="openWorkspaceModal('rename')"
+            style="border-top: 1px solid var(--purple-dim); padding: 8px 10px; font-size: 11px; color: var(--yellow); cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            ✏️ Rename Workspace
+          </div>
+          <div onclick="openWorkspaceModal('create')"
+            style="border-top: 1px solid var(--purple-dim); padding: 8px 10px; font-size: 11px; color: var(--cyan); cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            + Create Workspace
+          </div>
+        </div>
+      </div>
+
+      <div class="app-sidebar-content">
+        <!-- Folders Section -->
+        <div>
+          <div class="nav-section-title">Collections / Folders</div>
+          <div class="folder-tree" id="folder-tree">
+            <a href="#" class="folder-item active" data-folder="all" onclick="filterFolder('all', event)">
+              <div class="folder-left"><span>📁</span> <span>All Snippets</span></div>
+              <span class="folder-count" id="count-all">0</span>
+            </a>
+            <a href="#" class="folder-item" data-folder="hooks" onclick="filterFolder('hooks', event)">
+              <div class="folder-left"><span>🪝</span> <span>hooks</span></div>
+              <span class="folder-count" id="count-hooks">0</span>
+            </a>
+            <a href="#" class="folder-item" data-folder="auth" onclick="filterFolder('auth', event)">
+              <div class="folder-left"><span>🔐</span> <span>auth</span></div>
+              <span class="folder-count" id="count-auth">0</span>
+            </a>
+            <a href="#" class="folder-item" data-folder="aws-infra" onclick="filterFolder('aws-infra', event)">
+              <div class="folder-left"><span>☁️</span> <span>aws-infra</span></div>
+              <span class="folder-count" id="count-aws-infra">0</span>
+            </a>
+            <a href="#" class="folder-item" data-folder="database" onclick="filterFolder('database', event)">
+              <div class="folder-left"><span>🗄️</span> <span>database</span></div>
+              <span class="folder-count" id="count-database">0</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Language Filters -->
+        <div>
+          <div class="nav-section-title">Languages</div>
+          <div class="filter-group" id="lang-filter-group">
+            <span style="font-size: 11px; color: var(--muted); font-style: italic;">No languages indexed</span>
+          </div>
+        </div>
+
+        <!-- Tag Filters -->
+        <div>
+          <div class="nav-section-title">Tags</div>
+          <div class="filter-group" id="tag-filter-group">
+            <span style="font-size: 11px; color: var(--muted); font-style: italic;">No tags indexed</span>
+          </div>
+        </div>
+
+        <!-- Package Dependencies -->
+        <div>
+          <div class="nav-section-title">Detected Packages</div>
+          <div class="filter-group" id="pkg-filter-group">
+            <span style="font-size: 11px; color: var(--muted); font-style: italic;">No packages detected</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Profile Footer -->
+      <div class="app-sidebar-footer">
+        <div class="sidebar-user" style="cursor: pointer;" title="Account Profile">
+          <div style="display: flex; align-items: center; gap: 10px;"
+            onclick="window.location.href='settings.html?tab=account'">
+            <div class="user-avatar" id="sidebar-user-avatar">P</div>
+            <div class="user-meta">
+              <span class="user-name" id="sidebar-user-name">Loading...</span>
+              <span class="user-email" id="sidebar-user-email"></span>
+            </div>
+          </div>
+          <a href="auth.html" title="Sign Out" onclick="return confirmSignOut(event)"
+            style="color: var(--muted); font-size: 11px; text-decoration: none;">🚪</a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ░░░ MAIN VAULT VIEW ░░░ -->
+    <main class="app-main">
+
+      <!-- Topbar with Search Trigger & New Snippet CTA -->
+      <header class="app-topbar">
+        <button class="search-trigger-btn js-open-cmdk">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.35-4.35" />
+            </svg>
+            <span>Search snippets by intent...</span>
+          </div>
+          <span class="kbd-badge">⌘K</span>
+        </button>
+
+        <div class="topbar-actions">
+          <a href="settings.html" class="btn-outline-pixel" style="font-size: 11px; padding: 7px 12px;">👤 Account</a>
+          <a href="studio.html" class="btn-solid-pixel" style="font-size: 11px; padding: 8px 16px;">+ New Snippet</a>
+        </div>
+      </header>
+
+      <!-- Vault Content Area -->
+      <div class="app-content">
+
+        <!-- Controls: View heading, Sort & Layout Switcher -->
+        <div class="view-controls">
+          <div class="view-heading">
+            <h2 id="current-folder-title">Personal Vault</h2>
+            <span id="item-count-label">0 snippets</span>
+          </div>
+
+          <div class="view-tools">
+            <select class="select-pixel" onchange="sortSnippets(this.value)">
+              <option value="updated">Sort by: Recently Updated</option>
+              <option value="created">Sort by: Date Created</option>
+              <option value="title">Sort by: Title (A-Z)</option>
+            </select>
+            <div class="btn-icon-pixel active" title="Grid View">⊞</div>
+            <div class="btn-icon-pixel" title="List View" onclick="showToast('List view activated')">☰</div>
+          </div>
+        </div>
+
+        <!-- Snippets Grid (Populated dynamically with actual user snippets) -->
+        <div class="snippet-grid" id="snippet-grid"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ░░░ GLOBAL COMMAND PALETTE (⌘K) ░░░ -->
+  <div class="cmdk-overlay" id="cmdk-modal">
+    <div class="cmdk-dialog pixel-border-box">
+      <div class="cmdk-input-row">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" />
+        </svg>
+        <input type="text" id="cmdk-input" class="cmdk-input"
+          placeholder="Describe what the code does or type / for filters..." autofocus />
+        <span class="kbd-badge">ESC</span>
+      </div>
+      <div class="cmdk-results" id="cmdk-results"></div>
+      <div class="cmdk-footer">
+        <div style="display: flex; gap: 14px;">
+          <span>↑↓ to navigate</span>
+          <span>↵ to open</span>
+          <span>⌘C copy code</span>
+          <span>⌘⇧C copy install</span>
+        </div>
+        <span style="color: var(--cyan);">Hybrid Vector + Keyword Search</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ░░░ WORKSPACE MODAL (Create / Rename) ░░░ -->
+  <div id="workspace-modal-backdrop" class="modal-backdrop" onclick="closeWorkspaceModal(event)" style="display: none;">
+    <div class="modal-dialog pixel-border-box" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="ws-modal-icon" style="font-size: 16px;">⚡</span>
+          <h3 id="ws-modal-title" style="font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--white); margin: 0; text-transform: uppercase;">
+            Create Workspace
+          </h3>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="closeWorkspaceModal()" aria-label="Close modal">✕</button>
+      </div>
+
+      <p id="ws-modal-desc" style="font-size: 11px; color: var(--muted); margin: 6px 0 16px 0; line-height: 1.5;">
+        Create an isolated vault workspace to categorize your personal code snippets and packages.
+      </p>
+
+      <form id="workspace-modal-form" onsubmit="handleWorkspaceFormSubmit(event)">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" style="font-size: 10px; color: var(--purple-light); display: block; margin-bottom: 6px;">WORKSPACE NAME</label>
+          <input type="text" id="ws-modal-input" class="modal-input-field" placeholder="e.g. Backend Services, Personal Lab..." maxlength="50" autocomplete="off" required />
+          <span style="font-size: 10px; color: var(--muted); margin-top: 6px; display: block;">Press <kbd class="kbd-badge" style="font-size: 9px; padding: 1px 5px;">Enter ↵</kbd> to save or <kbd class="kbd-badge" style="font-size: 9px; padding: 1px 5px;">ESC</kbd> to cancel.</span>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn-outline-pixel" onclick="closeWorkspaceModal()" style="font-size: 11px; padding: 7px 15px;">Cancel</button>
+          <button type="submit" id="ws-modal-submit-btn" class="btn-solid-pixel" style="font-size: 11px; padding: 7px 18px;">
+            ⚡ Create Workspace
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app-script.js"></script>
+  <script>
+    let activeFolder = 'all';
+    let activeLanguages = new Set();
+    let activeTags = new Set();
+    let userSnippets = [];
+    let currentSort = 'updated';
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function timeAgo(dateString) {
+      if (!dateString) return 'recently';
+      const now = new Date();
+      const past = new Date(dateString);
+      const diffMs = now - past;
+      if (isNaN(diffMs) || diffMs < 0) return 'recently';
+      const diffSecs = Math.floor(diffMs / 1000);
+      if (diffSecs < 60) return 'just now';
+      const diffMins = Math.floor(diffSecs / 60);
+      if (diffMins < 60) return `${diffMins}m ago`;
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) return `${diffHours}h ago`;
+      const diffDays = Math.floor(diffHours / 24);
+      return `${diffDays}d ago`;
+    }
+
+    function getLangBadge(lang) {
+      const l = (lang || '').toLowerCase();
+      if (l.includes('type') || l === 'ts') return { text: 'TS', color: 'var(--cyan)' };
+      if (l.includes('py') || l === 'python') return { text: 'PY', color: 'var(--yellow)' };
+      if (l.includes('java') || l === 'js') return { text: 'JS', color: '#facc15' };
+      if (l.includes('go')) return { text: 'GO', color: '#00add8' };
+      if (l.includes('sql')) return { text: 'SQL', color: '#f472b6' };
+      return { text: (l.slice(0, 3) || 'TXT').toUpperCase(), color: 'var(--cyan)' };
+    }
+
+    function formatCodePreview(code) {
+      if (!code) return '<code>// Empty snippet</code>';
+      const lines = code.split('\n').slice(0, 7).join('\n');
+      const escaped = escapeHtml(lines);
+      return escaped
+        .replace(/\b(import|export|from|function|const|let|var|return|def|class|async|await)\b/g, '<span style="color:#f472b6;">$1</span>')
+        .replace(/\b(true|false|null|undefined|number|string|boolean)\b/g, '<span style="color:#60a5fa;">$1</span>')
+        .replace(/('[\s\S]*?'|"[\s\S]*?"|`[\s\S]*?`)/g, '<span style="color:#a7f3d0;">$1</span>');
+    }
+
+    async function fetchUserSnippets() {
+      let serverSnippets = [];
+      try {
+        const res = await fetch('/api/snippets');
+        if (res.status === 401) {
+          window.location.replace('auth.html?next=app.html');
+          return;
+        }
+        if (res.ok) {
+          const data = await res.json();
+          serverSnippets = data.snippets || [];
+        }
+      } catch (err) {
+        console.warn('Backend unavailable:', err);
+      }
+
+      userSnippets = serverSnippets;
+      applySortAndRender();
+      updateSidebarFilters();
+    }
+
+    function applySortAndRender() {
+      let list = [...userSnippets];
+
+      if (currentSort === 'title') {
+        list.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+      } else if (currentSort === 'created') {
+        list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      } else {
+        list.sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
+      }
+
+      renderSnippetCards(list);
+    }
+
+    function renderSnippetCards(allList) {
+      const grid = document.getElementById('snippet-grid');
+      grid.innerHTML = '';
+
+      if (userSnippets.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-vault-card pixel-border-box" style="grid-column: 1 / -1; padding: 48px 24px; text-align: center; background: rgba(18, 18, 22, 0.75); border: 1px dashed rgba(139, 92, 246, 0.4); border-radius: 8px;">
+            <div style="font-size: 40px; margin-bottom: 14px; filter: drop-shadow(0 0 14px rgba(124, 58, 237, 0.6));">📂</div>
+            <div style="font-family: var(--pixel); font-size: 13px; color: var(--white); margin-bottom: 10px;">VAULT IS EMPTY</div>
+            <p style="font-size: 12px; color: var(--muted); max-width: 420px; margin: 0 auto 22px; line-height: 1.6;">
+              No snippets found in your vault. Create your first dependency-aware snippet in Studio to start your personal library!
+            </p>
+            <a href="studio.html" class="btn-solid-pixel" style="display: inline-block; padding: 10px 24px; font-size: 11px; text-decoration: none;">+ Create First Snippet</a>
+          </div>
+        `;
+        document.getElementById('item-count-label').textContent = '0 snippets in vault';
+        document.getElementById('current-ws-sub').textContent = '0 snippets · 0 leaks';
+        return;
+      }
+
+      // Filter
+      const filtered = allList.filter(s => {
+        const folder = s.folderId || 'hooks';
+        const lang = (s.language || 'typescript').toLowerCase();
+        const matchFolder = (activeFolder === 'all' || folder === activeFolder);
+        const matchLang = (activeLanguages.size === 0 || activeLanguages.has(lang));
+        let matchTags = true;
+        if (activeTags.size > 0) {
+          const sTags = (s.tags || []).map(t => t.toLowerCase());
+          matchTags = Array.from(activeTags).some(t => sTags.includes(t));
+        }
+        return matchFolder && matchLang && matchTags;
+      });
+
+      document.getElementById('item-count-label').textContent = `${filtered.length} snippet${filtered.length === 1 ? '' : 's'}`;
+      document.getElementById('current-ws-sub').textContent = `${userSnippets.length} snippets · 0 leaks`;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-vault-card pixel-border-box" style="grid-column: 1 / -1; padding: 40px 20px; text-align: center; background: rgba(18, 18, 22, 0.65); border: 1px dashed rgba(139, 92, 246, 0.3); border-radius: 6px;">
+            <div style="font-size: 28px; margin-bottom: 10px;">🔍</div>
+            <div style="font-family: var(--pixel); font-size: 11px; color: var(--white); margin-bottom: 8px;">NO MATCHING SNIPPETS</div>
+            <p style="font-size: 11px; color: var(--muted); margin-bottom: 16px;">No snippets match the selected folder or filter criteria.</p>
+            <button class="btn-outline-pixel" onclick="clearFilters()" style="font-size: 11px; padding: 6px 14px;">Clear Filters</button>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(s => {
+        const badge = getLangBadge(s.language);
+        const visIcon = s.visibility === 'public' ? '🌐' : s.visibility === 'team' ? '👥' : '🔒';
+        const card = document.createElement('div');
+        card.className = 'snippet-card pixel-border-box';
+        card.setAttribute('data-id', s.id);
+        card.setAttribute('data-folder', s.folderId || 'hooks');
+        card.setAttribute('data-lang', (s.language || 'typescript').toLowerCase());
+        card.setAttribute('data-title', s.title || '');
+
+        let depsHtml = '';
+        if (Array.isArray(s.dependencies) && s.dependencies.length > 0) {
+          depsHtml = s.dependencies.map(d => `<span class="dep-chip">${escapeHtml(d.name || d)} ${escapeHtml(d.versionHint || '')}</span>`).join(' ');
+        } else if (Array.isArray(s.tags) && s.tags.length > 0) {
+          depsHtml = s.tags.map(t => `<span class="dep-chip">#${escapeHtml(t)}</span>`).join(' ');
+        } else {
+          depsHtml = `<span class="dep-chip" style="opacity: 0.6;">zero-dep</span>`;
+        }
+
+        card.innerHTML = `
+          <div class="snippet-card-header">
+            <div class="snippet-card-title-group">
+              <div class="snippet-title-row">
+                <a href="snippet.html?id=${encodeURIComponent(s.id)}" class="snippet-title">${escapeHtml(s.title)}</a>
+                <span class="dep-chip" style="color: ${badge.color}; border-color: ${badge.color};">${badge.text}</span>
+              </div>
+              <span class="snippet-crumb">📁 ${escapeHtml(s.folderName || s.folderId || 'general')}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span title="${escapeHtml(s.visibility || 'private')}" style="font-size: 12px;">${visIcon}</span>
+              <button class="btn-icon-pixel" title="Delete Snippet" onclick="deleteUserSnippet('${escapeHtml(s.id)}', event)" style="font-size: 10px; padding: 2px 6px; color: #ef4444; border-color: rgba(239,68,68,0.4);">✕</button>
+            </div>
+          </div>
+          <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=${encodeURIComponent(s.id)}'" style="cursor: pointer;">
+            <pre><code>${formatCodePreview(s.code)}</code></pre>
+          </div>
+          <div class="snippet-card-footer">
+            <div class="snippet-deps-chips">
+              ${depsHtml}
+            </div>
+            <div class="snippet-meta-right">
+              <span class="snippet-updated">${timeAgo(s.updatedAt || s.createdAt)}</span>
+              <button class="btn-copy-card" onclick="copySnippetCard('${escapeHtml(s.id)}', event)">Copy</button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function updateSidebarFilters() {
+      // 1. Folder counts
+      const counts = { all: userSnippets.length, hooks: 0, auth: 0, 'aws-infra': 0, database: 0 };
+      const languages = new Map();
+      const tags = new Map();
+      const packages = new Map();
+
+      userSnippets.forEach(s => {
+        const f = s.folderId || 'hooks';
+        counts[f] = (counts[f] || 0) + 1;
+
+        const lang = (s.language || 'typescript').toLowerCase();
+        languages.set(lang, (languages.get(lang) || 0) + 1);
+
+        (s.tags || []).forEach(t => {
+          const tagNorm = t.toLowerCase();
+          tags.set(tagNorm, (tags.get(tagNorm) || 0) + 1);
+        });
+
+        (s.dependencies || []).forEach(d => {
+          const pkgName = (d.name || d).toLowerCase();
+          packages.set(pkgName, (packages.get(pkgName) || 0) + 1);
+        });
+      });
+
+      document.getElementById('count-all').textContent = counts.all;
+      ['hooks', 'auth', 'aws-infra', 'database'].forEach(fId => {
+        const el = document.getElementById(`count-${fId}`);
+        if (el) el.textContent = counts[fId] || 0;
+      });
+
+      // 2. Languages group
+      const langGroup = document.getElementById('lang-filter-group');
+      if (languages.size === 0) {
+        langGroup.innerHTML = `<span style="font-size: 11px; color: var(--muted); font-style: italic;">No languages indexed</span>`;
+      } else {
+        langGroup.innerHTML = '';
+        languages.forEach((cnt, lang) => {
+          const chip = document.createElement('span');
+          chip.className = `filter-chip ${activeLanguages.has(lang) ? 'active' : ''}`;
+          chip.textContent = `${lang.charAt(0).toUpperCase() + lang.slice(1)} (${cnt})`;
+          chip.onclick = () => {
+            if (activeLanguages.has(lang)) activeLanguages.delete(lang);
+            else activeLanguages.add(lang);
+            chip.classList.toggle('active');
+            applySortAndRender();
+          };
+          langGroup.appendChild(chip);
+        });
+      }
+
+      // 3. Tags group
+      const tagGroup = document.getElementById('tag-filter-group');
+      if (tags.size === 0) {
+        tagGroup.innerHTML = `<span style="font-size: 11px; color: var(--muted); font-style: italic;">No tags indexed</span>`;
+      } else {
+        tagGroup.innerHTML = '';
+        tags.forEach((cnt, t) => {
+          const chip = document.createElement('span');
+          chip.className = `filter-chip ${activeTags.has(t) ? 'active' : ''}`;
+          chip.textContent = `#${t} (${cnt})`;
+          chip.onclick = () => {
+            if (activeTags.has(t)) activeTags.delete(t);
+            else activeTags.add(t);
+            chip.classList.toggle('active');
+            applySortAndRender();
+          };
+          tagGroup.appendChild(chip);
+        });
+      }
+
+      // 4. Packages group
+      const pkgGroup = document.getElementById('pkg-filter-group');
+      if (packages.size === 0) {
+        pkgGroup.innerHTML = `<span style="font-size: 11px; color: var(--muted); font-style: italic;">No packages detected</span>`;
+      } else {
+        pkgGroup.innerHTML = '';
+        packages.forEach((cnt, p) => {
+          const chip = document.createElement('span');
+          chip.className = 'filter-chip';
+          chip.textContent = `${p} (${cnt})`;
+          pkgGroup.appendChild(chip);
+        });
+      }
+    }
+
+    async function deleteUserSnippet(id, e) {
+      if (e) e.stopPropagation();
+      const snip = userSnippets.find(s => s.id === id);
+      const title = snip ? snip.title : id;
+      if (!confirm(`Are you sure you want to delete snippet "${title}"?`)) return;
+
+      try {
+        await fetch(`/api/snippets/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      } catch (err) {
+        console.warn('Backend delete failed, removing locally:', err);
+      }
+
+      userSnippets = userSnippets.filter(s => s.id !== id);
+      try {
+        localStorage.setItem('pluck_user_snippets', JSON.stringify(userSnippets));
+      } catch (e) {}
+
+      applySortAndRender();
+      updateSidebarFilters();
+      showToast(`Snippet "${title}" deleted from vault`, 'info');
+    }
+
+    function copySnippetCard(id, e) {
+      if (e) e.stopPropagation();
+      const snip = userSnippets.find(s => s.id === id);
+      if (!snip) return;
+      copySnippetText(snip.code || '', `Copied "${snip.title}" to clipboard!`);
+    }
+
+    function clearFilters() {
+      activeFolder = 'all';
+      activeLanguages.clear();
+      activeTags.clear();
+      document.querySelectorAll('.folder-tree .folder-item').forEach(f => {
+        f.classList.toggle('active', f.getAttribute('data-folder') === 'all');
+      });
+      document.getElementById('current-folder-title').textContent = 'Personal Vault';
+      applySortAndRender();
+      updateSidebarFilters();
+      showToast('Filters cleared');
+    }
+
+    function filterFolder(folderName, e) {
+      if (e) e.preventDefault();
+      activeFolder = folderName;
+      document.querySelectorAll('.folder-tree .folder-item').forEach(f => f.classList.remove('active'));
+      if (e && e.currentTarget) e.currentTarget.classList.add('active');
+      document.getElementById('current-folder-title').textContent = folderName === 'all' ? 'Personal Vault' : `Folder: ${folderName}`;
+      applySortAndRender();
+      showToast(`Showing ${folderName === 'all' ? 'all snippets' : 'folder: ' + folderName}`);
+    }
+
+    function sortSnippets(val) {
+      currentSort = val;
+      applySortAndRender();
+      showToast(`Sorted by: ${val}`);
+    }
+
+    let userWorkspaces = [];
+    let activeWorkspace = null;
+
+    function toggleWorkspaceDropdown() {
+      const d = document.getElementById('ws-dropdown');
+      if (d) d.style.display = d.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function loadWorkspaces() {
+      if (localStorage.getItem('pluck_active_workspace') === 'ws_personal') {
+        localStorage.removeItem('pluck_active_workspace');
+      }
+
+      try {
+        const res = await fetch('/api/workspaces');
+        if (res.ok) {
+          const data = await res.json();
+          userWorkspaces = (data.workspaces || []).filter(w => w && w.id !== 'ws_personal');
+        }
+      } catch (err) {
+        console.warn('Failed to load workspaces:', err);
+      }
+
+      if (userWorkspaces.length === 0) {
+        const cachedUser = JSON.parse(localStorage.getItem('pluck_user') || '{}');
+        const personalId = cachedUser.id ? `ws_${cachedUser.id}` : 'ws_vault';
+        const personalName = cachedUser.name ? `${cachedUser.name}'s Vault` : 'Personal Vault';
+        userWorkspaces = [{ id: personalId, name: personalName }];
+      }
+
+      const savedWsId = localStorage.getItem('pluck_active_workspace');
+      activeWorkspace = (savedWsId && savedWsId !== 'ws_personal')
+        ? (userWorkspaces.find(w => w.id === savedWsId) || userWorkspaces[0])
+        : userWorkspaces[0];
+
+      if (activeWorkspace) {
+        localStorage.setItem('pluck_active_workspace', activeWorkspace.id);
+      }
+
+      updateWorkspaceUI();
+    }
+
+    function updateWorkspaceUI() {
+      if (!activeWorkspace) return;
+      const nameEl = document.getElementById('current-ws-name');
+      const iconEl = document.getElementById('current-ws-icon');
+      const headingEl = document.getElementById('current-folder-title');
+      const initial = (activeWorkspace.name || 'P').charAt(0).toUpperCase();
+
+      if (nameEl) nameEl.textContent = activeWorkspace.name;
+      if (iconEl) iconEl.textContent = initial;
+      if (headingEl && activeFolder === 'all') headingEl.textContent = activeWorkspace.name;
+
+      renderWorkspaceList();
+    }
+
+    function renderWorkspaceList() {
+      const container = document.getElementById('ws-list-container');
+      if (!container) return;
+
+      container.innerHTML = userWorkspaces.map(ws => {
+        const isCurrent = activeWorkspace && ws.id === activeWorkspace.id;
+        const initial = (ws.name || 'W').charAt(0).toUpperCase();
+        return `
+          <div onclick="switchWorkspace('${escapeHtml(ws.id)}')"
+            style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; cursor: pointer; background: ${isCurrent ? 'rgba(124,58,237,0.2)' : 'transparent'}; margin-bottom: 4px; border-radius: 2px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="width: 18px; height: 18px; background: ${isCurrent ? 'var(--purple)' : 'rgba(255,255,255,0.1)'}; color: #fff; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">${initial}</span>
+              <span style="font-size: 11px; font-weight: ${isCurrent ? '700' : '400'}; color: #fff;">${escapeHtml(ws.name)}</span>
+            </div>
+            ${isCurrent ? '<span style="font-size: 10px; color: var(--green);">✓</span>' : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function switchWorkspace(wsId) {
+      const target = userWorkspaces.find(w => w.id === wsId);
+      if (!target) return;
+
+      activeWorkspace = target;
+      localStorage.setItem('pluck_active_workspace', target.id);
+      toggleWorkspaceDropdown();
+      updateWorkspaceUI();
+      showToast(`Switched to workspace: ${target.name}`, 'info');
+
+      await fetchUserSnippets();
+    }
+
+    let currentWorkspaceModalMode = 'create';
+
+    function openWorkspaceModal(mode = 'create') {
+      currentWorkspaceModalMode = mode;
+      const modal = document.getElementById('workspace-modal-backdrop');
+      const titleEl = document.getElementById('ws-modal-title');
+      const descEl = document.getElementById('ws-modal-desc');
+      const iconEl = document.getElementById('ws-modal-icon');
+      const inputEl = document.getElementById('ws-modal-input');
+      const submitBtn = document.getElementById('ws-modal-submit-btn');
+
+      const d = document.getElementById('ws-dropdown');
+      if (d) d.style.display = 'none';
+
+      if (mode === 'rename') {
+        if (!activeWorkspace) return;
+        if (iconEl) iconEl.textContent = '✏️';
+        if (titleEl) titleEl.textContent = 'Rename Workspace';
+        if (descEl) descEl.textContent = `Update display name for "${activeWorkspace.name}". All snippets in this vault remain preserved.`;
+        if (submitBtn) submitBtn.innerHTML = '✓ Save New Name';
+        if (inputEl) {
+          inputEl.value = activeWorkspace.name || '';
+          inputEl.placeholder = 'Enter new workspace name...';
+        }
+      } else {
+        if (iconEl) iconEl.textContent = '⚡';
+        if (titleEl) titleEl.textContent = 'Create New Workspace';
+        if (descEl) descEl.textContent = 'Create a dedicated isolated vault environment to categorize your snippets and packages.';
+        if (submitBtn) submitBtn.innerHTML = '⚡ Create Workspace';
+        if (inputEl) {
+          inputEl.value = '';
+          inputEl.placeholder = 'e.g. Backend Microservices, Personal Lab...';
+        }
+      }
+
+      if (modal) {
+        modal.style.display = 'flex';
+        setTimeout(() => {
+          if (inputEl) {
+            inputEl.focus();
+            if (mode === 'rename') inputEl.select();
+          }
+        }, 50);
+      }
+    }
+
+    function closeWorkspaceModal(e) {
+      if (e && e.target && e.target.id !== 'workspace-modal-backdrop' && !e.target.classList.contains('modal-close-btn') && e.target.tagName !== 'BUTTON') {
+        return;
+      }
+      const modal = document.getElementById('workspace-modal-backdrop');
+      if (modal) modal.style.display = 'none';
+    }
+
+    async function handleWorkspaceFormSubmit(e) {
+      if (e) e.preventDefault();
+      const inputEl = document.getElementById('ws-modal-input');
+      const submitBtn = document.getElementById('ws-modal-submit-btn');
+      const name = inputEl ? inputEl.value.trim() : '';
+
+      if (!name) {
+        showToast('Please enter a workspace name', 'error');
+        if (inputEl) inputEl.focus();
+        return;
+      }
+
+      const origBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving...';
+      }
+
+      try {
+        if (currentWorkspaceModalMode === 'create') {
+          const res = await fetch('/api/workspaces', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const newWs = data.workspace;
+            userWorkspaces.push(newWs);
+            activeWorkspace = newWs;
+            localStorage.setItem('pluck_active_workspace', newWs.id);
+            closeWorkspaceModal();
+            updateWorkspaceUI();
+            showToast(`Workspace "${newWs.name}" created!`, 'success');
+            await fetchUserSnippets();
+          } else {
+            const err = await res.json();
+            showToast(err.message || 'Failed to create workspace', 'error');
+          }
+        } else {
+          // Rename mode
+          if (!activeWorkspace) return;
+          if (name === activeWorkspace.name) {
+            closeWorkspaceModal();
+            return;
+          }
+
+          const res = await fetch(`/api/workspaces/${encodeURIComponent(activeWorkspace.id)}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            activeWorkspace.name = data.workspace.name;
+            const idx = userWorkspaces.findIndex(w => w.id === activeWorkspace.id);
+            if (idx >= 0) userWorkspaces[idx].name = data.workspace.name;
+            closeWorkspaceModal();
+            updateWorkspaceUI();
+            showToast(`Workspace renamed to "${data.workspace.name}"!`, 'success');
+          } else {
+            const err = await res.json();
+            showToast(err.message || 'Failed to rename workspace', 'error');
+          }
+        }
+      } catch (err) {
+        showToast('Operation failed: ' + (err.message || 'Network error'), 'error');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = origBtnHtml;
+        }
+      }
+    }
+
+    // Aliases for backward compatibility
+    function createNewWorkspace() { openWorkspaceModal('create'); }
+    function renameCurrentWorkspace() { openWorkspaceModal('rename'); }
+
+    // Close on Escape key
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('workspace-modal-backdrop');
+        if (modal && modal.style.display !== 'none') {
+          closeWorkspaceModal();
+        }
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      const btn = document.getElementById('ws-switcher-btn');
+      const d = document.getElementById('ws-dropdown');
+      if (d && btn && !btn.contains(e.target) && !d.contains(e.target)) {
+        d.style.display = 'none';
+      }
+    });
+
+    function confirmSignOut(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      if (typeof window.openSignOutModal === 'function') {
+        window.openSignOutModal();
+      } else {
+        window.location.href = 'auth.html';
+      }
+      return false;
+    }
+
+    function syncUserSession() {
+      const token = localStorage.getItem('pluck_token');
+      if (!token) {
+        window.location.replace('auth.html?next=app.html');
+        return;
+      }
+      try {
+        const cachedUser = JSON.parse(localStorage.getItem('pluck_user') || 'null');
+        if (cachedUser) {
+          const avatarEl = document.getElementById('sidebar-user-avatar');
+          const nameEl = document.getElementById('sidebar-user-name');
+          const emailEl = document.getElementById('sidebar-user-email');
+          if (avatarEl) avatarEl.textContent = cachedUser.avatar || (cachedUser.name ? cachedUser.name.charAt(0).toUpperCase() : 'P');
+          if (nameEl) nameEl.textContent = cachedUser.name || 'Developer';
+          if (emailEl) emailEl.textContent = cachedUser.email || '';
+        }
+        fetch('/api/auth/me')
+          .then(res => {
+            if (res.status === 401) {
+              localStorage.removeItem('pluck_token');
+              localStorage.removeItem('pluck_user');
+              window.location.replace('auth.html?next=app.html');
+              return null;
+            }
+            return res.ok ? res.json() : null;
+          })
+          .then(data => {
+            if (data && data.user) {
+              localStorage.setItem('pluck_user', JSON.stringify(data.user));
+              const avatarEl = document.getElementById('sidebar-user-avatar');
+              const nameEl = document.getElementById('sidebar-user-name');
+              const emailEl = document.getElementById('sidebar-user-email');
+              if (avatarEl) avatarEl.textContent = data.user.avatar || (data.user.name ? data.user.name.charAt(0).toUpperCase() : 'P');
+              if (nameEl) nameEl.textContent = data.user.name || 'Developer';
+              if (emailEl) emailEl.textContent = data.user.email || '';
+            }
+          })
+          .catch(() => {});
+      } catch (e) {}
+    }
+
+    // Initialize workspaces, snippets, and user session on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+      const token = localStorage.getItem('pluck_token');
+      if (!token) {
+        window.location.replace('auth.html?next=app.html');
+        return;
+      }
+      syncUserSession();
+      await loadWorkspaces();
+      fetchUserSnippets();
+    });
+  </script>
+  <script src="app-script.js"></script>
+  <script src="magic-bento.js"></script>
+  <script src="border-glow.js"></script>
+</body>
+
+</html>
